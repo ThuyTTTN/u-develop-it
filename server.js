@@ -67,15 +67,25 @@ app.get("/api/candidate/:id", (req, res) => {
 
 //Create a candidate - wrapped in express.js route
 app.post('/api/candidate', ({ body }, res) => {
-  const errors = inputCheck(body, 'first_name', 'last_name', 'industry_connected');
+  // Candidate is allowed not to be affiliated with a party
+  const errors = inputCheck(
+    body,
+    'first_name',
+    'last_name',
+    'industry_connected'
+  );
   if (errors) {
     res.status(400).json({ error: errors });
     return;
   }
 
-  const sql = `INSERT INTO candidates (first_name, last_name, industry_connected)
-  VALUES (?,?,?)`;
-  const params = [body.first_name, body.last_name, body.industry_connected];
+  const sql = `INSERT INTO candidates (first_name, last_name, industry_connected, party_id) VALUES (?,?,?,?)`;
+  const params = [
+    body.first_name,
+    body.last_name,
+    body.industry_connected,
+    body.party_id
+  ];
 
   db.query(sql, params, (err, result) => {
     if (err) {
@@ -84,7 +94,8 @@ app.post('/api/candidate', ({ body }, res) => {
     }
     res.json({
       message: 'success',
-      data: body
+      data: body,
+      changes: result.affectedRows
     });
   });
 });
@@ -174,7 +185,7 @@ app.get('/api/party/:id', (req, res) => {
   });
 });
 
-//adding delete route will give you the opportunity to test the 'ON DELETE SET NULL'
+// delete route will give you the opportunity to test the 'ON DELETE SET NULL'
 app.delete('/api/party/:id', (req, res) => {
   const sql =  `DELETE FROM parties WHERE id = ?`;
   const params = [req.params.id];
